@@ -1,6 +1,15 @@
 import mongoose from 'mongoose';
 
 const studentSchema = new mongoose.Schema({
+    schoolId: {
+        type: String,
+        required: true,
+        index: true
+    },
+    folderPath: {
+        type: String,
+        required: true
+    },
     name: {
         type: String,
         required: true,

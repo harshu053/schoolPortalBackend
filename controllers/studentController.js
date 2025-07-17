@@ -32,7 +32,15 @@ const getStudent = async (req, res) => {
 // @access  Public
 const createStudent = async (req, res) => {
     try {
-        const student = await Student.create(req.body);
+        const { schoolId, ...studentData } = req.body;
+        
+        // Set the folder path for the student
+        const folderPath = `${schoolId}/students/${studentData.rollNumber}`;
+        const student = await Student.create({
+            ...studentData,
+            schoolId,
+            folderPath
+        });
         res.status(201).json(student);
     } catch (error) {
         res.status(400).json({ message: error.message });
