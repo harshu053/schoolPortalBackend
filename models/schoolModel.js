@@ -1,14 +1,19 @@
 import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 
+// =======================
+// Subscription Sub-Schema
+// =======================
 const subscriptionSchema = new mongoose.Schema({
     planType: {
         type: String,
         enum: ['Basic', 'Premium', 'Enterprise'],
-        required: true
+        default: 'Basic'
     },
     startDate: {
         type: Date,
-        required: true
+        required: true,
+        default: Date.now
     },
     endDate: {
         type: Date,
@@ -20,8 +25,8 @@ const subscriptionSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['Active', 'Expired', 'Cancelled'],
-        default: 'Active'
+        enum: ['Active', 'Expired', 'Trial', 'Cancelled'],
+        default: 'Trial'
     },
     paymentHistory: [{
         amount: Number,
@@ -34,67 +39,105 @@ const subscriptionSchema = new mongoose.Schema({
     }]
 });
 
+// ===================
+// Main School Schema
+// ===================
 const schoolSchema = new mongoose.Schema({
-    name: {
+    schoolName: {
         type: String,
-        required: true
+        required: [true, 'School name is required'],
+        trim: true
     },
-    code: {
+    schoolId: {
         type: String,
-        required: true,
-        unique: true
+        required: [true, 'School ID is required'],
+        unique: true,
+        trim: true
+    },
+    diceCode: {
+        type: String,
+        required: [true, 'DICE code is required'],
+        unique: true,
+        trim: true,
+        match: [/^[0-9]{11}$/, 'DICE code must be 11 digits']
     },
     type: {
         type: String,
-        enum: ['Primary', 'Secondary', 'High School', 'K-12', 'Other'],
-        required: true
+        enum: ['Primary','public', 'Secondary', 'High School', 'K-12', 'Other'],
+        required: [true, 'School type is required']
     },
     address: {
-        street: String,
-        city: String,
-        state: String,
-        country: String,
-        pinCode: String
+        landmark: {
+            type: String,
+            required: [true, 'Street address is required']
+        },
+        city: {
+            type: String,
+            required: [true, 'City is required']
+        },
+        state: {
+            type: String,
+            required: [true, 'State is required']
+        },
+        country: {
+            type: String,
+            required: [true, 'Country is required'],
+            default: 'India'
+        },
+        pinCode: {
+            type: String,
+            required: [true, 'PIN code is required'],
+            match: [/^[0-9]{6}$/, 'Please enter a valid 6-digit PIN code']
+        }
+    },
+    userRole:{
+        type: String,
+        required: [true, 'user role is required'],
     },
     contact: {
-        email: {
+        schoolEmail: {
             type: String,
-            required: true,
-            unique: true
+            required: [true, 'School email is required'],
+            unique: true,
+            sparse: true,
+            trim: true,
+            lowercase: true,
+            match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email']
         },
-        phone: {
+        schoolPhone: {
             type: String,
-            required: true
+            required: [true, 'School phone is required'],
+            match: [/^[0-9]{10}$/, 'Please enter a valid 10-digit phone number']
         },
-        alternatePhone: String,
-        website: String
+        website: {
+            type: String,
+            trim: true
+        }
     },
     adminInfo: {
-        principalName: String,
-        principalEmail: String,
-        principalPhone: String
+        principalName: {
+            type: String,
+            required: [true, 'Principal name is required']
+        },
+        schoolEmail: {
+            type: String,
+            required: [true, 'Principal email is required'],
+            unique: true,
+            sparse: true,
+            trim: true,
+            lowercase: true,
+            match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email']
+        },
+        schoolPhone: {
+            type: String,
+            required: [true, 'Principal phone is required'],
+            match: [/^[0-9]{10}$/, 'Please enter a valid 10-digit phone number']
+        }
     },
     subscription: subscriptionSchema,
-    configuration: {
-        academicYear: {
-            start: Date,
-            end: Date
-        },
-        workingDays: [{
-            type: String,
-            enum: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-        }],
-        holidayCalendar: [{
-            date: Date,
-            description: String
-        }],
-        customization: {
-            logo: String,
-            theme: {
-                primaryColor: String,
-                secondaryColor: String
-            }
-        }
+    password: {
+        type: String, // Optional but needed if you use authentication
+        required: [true, 'Password is required']
     },
     status: {
         type: String,
@@ -108,17 +151,55 @@ const schoolSchema = new mongoose.Schema({
         libraryManagement: { type: Boolean, default: false },
         transportManagement: { type: Boolean, default: false },
         feeManagement: { type: Boolean, default: true }
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
     }
 }, {
     timestamps: true
 });
 
-// Indexes for better query performance
-schoolSchema.index({ code: 1 }, { unique: true });
-schoolSchema.index({ 'contact.email': 1 }, { unique: true });
+// ======================
+// Indexes (no duplicates)
+// ======================
+schoolSchema.index({ schoolId: 1 }, { unique: true });
+schoolSchema.index({ diceCode: 1 }, { unique: true, sparse: true });
+schoolSchema.index({ 'contact.schoolEmail': 1 }, { unique: true, sparse: true });
+schoolSchema.index({ 'adminInfo.schoolEmail': 1 }, { unique: true, sparse: true });
 schoolSchema.index({ status: 1 });
 schoolSchema.index({ 'subscription.status': 1 });
 
-const School = mongoose.model('School', schoolSchema);
+// =======================
+// Middleware & Methods
+// =======================
+schoolSchema.pre('save', async function (next) {
+    if (!this.isModified('password')) return next();
+    try {
+        const salt = await bcrypt.genSalt(10);
+        this.password = await bcrypt.hash(this.password, salt);
+        next();
+    } catch (error) {
+        next(error);
+    }
+});
 
+schoolSchema.methods.comparePassword = async function (candidatePassword) {
+    return await bcrypt.compare(candidatePassword, this.password);
+};
+
+schoolSchema.pre('save', function (next) {
+    if (this.subscription && this.subscription.endDate) {
+        const now = new Date();
+        if (now > this.subscription.endDate) {
+            this.subscription.status = 'Expired';
+        }
+    }
+    next();
+});
+
+// ================
+// Model Export
+// ================
+const School = mongoose.model('School', schoolSchema);
 export default School;
