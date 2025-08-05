@@ -1,5 +1,6 @@
-import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
+import mongoose from 'mongoose'; 
+import Student from './studentModel.js';
+import teacher from './teacherModel.js';
 
 // =======================
 // Subscription Sub-Schema
@@ -134,9 +135,11 @@ const schoolSchema = new mongoose.Schema({
             match: [/^[0-9]{10}$/, 'Please enter a valid 10-digit phone number']
         }
     },
+    teachers:[teacher.schema],
+    students: [Student.schema],
     subscription: subscriptionSchema,
     password: {
-        type: String, // Optional but needed if you use authentication
+        type: String,  
         required: [true, 'Password is required']
     },
     status: {
@@ -172,21 +175,7 @@ schoolSchema.index({ 'subscription.status': 1 });
 
 // =======================
 // Middleware & Methods
-// =======================
-schoolSchema.pre('save', async function (next) {
-    if (!this.isModified('password')) return next();
-    try {
-        const salt = await bcrypt.genSalt(10);
-        this.password = await bcrypt.hash(this.password, salt);
-        next();
-    } catch (error) {
-        next(error);
-    }
-});
-
-schoolSchema.methods.comparePassword = async function (candidatePassword) {
-    return await bcrypt.compare(candidatePassword, this.password);
-};
+ 
 
 schoolSchema.pre('save', function (next) {
     if (this.subscription && this.subscription.endDate) {

@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
-import User from '../models/userModel.js';
+import School from '../models/schoolModel.js';
+import bcrypt from "bcryptjs";
 
 // Generate JWT Token
 const generateToken = (id) => {
@@ -8,39 +9,71 @@ const generateToken = (id) => {
     });
 };
 
+const validateToken = async (req, res) => {
+  try {
+    const user = await School.findById(req.userId).select('-password'); // exclude password
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    res.json(user); // Return user profile data
+  } catch (err) {
+    console.error('Profile fetch error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
 // @desc    Login user
 // @route   POST /api/auth/login
 // @access  Public
 const login = async (req, res) => {
-    try {
-        const { email, password } = req.body;
+  try{
+    const { schoolEmail, password } = req.body; 
+     
+    
+    // Check if school exists with the email
+    const school = await School.findOne({ "contact.schoolEmail": schoolEmail }); 
 
-        const user = await User.findOne({ email });
-        
-        if (!user || !(await user.matchPassword(password))) {
-            return res.status(401).json({ message: 'Invalid email or password' });
-        }
-
-        if (user.status !== 'active') {
-            return res.status(401).json({ message: 'Account is not active' });
-        }
-
-        // Update last login
-        user.lastLogin = new Date();
-        await user.save();
-
-        res.json({
-            _id: user._id,
-            name: user.name,
-            email: user.email,
-            role: user.role,
-            schoolId: user.schoolId,
-            permissions: user.permissions,
-            token: generateToken(user._id)
-        });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+    if (!school) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid email or password",
+      });
     }
+
+    
+    // Check if password matches
+    const loginPassword = String(password).trim(); 
+    
+    // Verify the password
+    const isMatch = await bcrypt.compare(loginPassword, school.password);
+     
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid email or password",
+      });
+    }
+
+    // Generate JWT token
+    const token = generateToken(school._id);
+
+    res.json({
+      success: true,
+      data: {
+        _id: school._id,
+        schoolId: school.schoolId,
+        schoolName: school.schoolName,
+        email: school.contact.schoolEmail,
+        role: school.userRole , 
+        token,
+      },
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error during login",
+    });
+  }
 };
 
 // @desc    Get current user profile
@@ -100,6 +133,7 @@ const createUser = async (req, res) => {
 };
 
 export {
+    validateToken,
     login,
     getUserProfile,
     createUser

@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/userModel.js';
+import Schools from '../models/schoolModel.js';
 
 // Protect routes - Authentication check
 const protect = async (req, res, next) => {
@@ -56,4 +57,20 @@ const authorize = (...permissions) => {
     };
 };
 
-export { protect, authorize };
+const verifyToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  if (!authHeader) return res.status(401).json({ error: 'No token provided' });
+
+  const token = authHeader.split(' ')[1]; // Bearer <token>
+  if (!token) return res.status(401).json({ error: 'Token missing' });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.userId = decoded.id; // or decoded._id, depending on your token payload
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+};
+
+export { protect, authorize , verifyToken};

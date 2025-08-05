@@ -6,7 +6,7 @@ const studentSchema = new mongoose.Schema({
         required: true,
         index: true
     },
-    folderPath: {
+    studentId: {
         type: String,
         required: true
     },
@@ -78,22 +78,22 @@ const studentSchema = new mongoose.Schema({
             required: true
         }
     },
-    attendance: [{
-        date: {
-            type: Date,
-            required: true
-        },
-        status: {
-            type: String,
-            enum: ['Present', 'Absent', 'Late'],
-            required: true
-        }
-    }],
-    performanceMetrics: {
-        currentGrade: String,
-        remarks: String,
-        achievements: [String]
-    }
+    // attendance: [{
+    //     date: {
+    //         type: Date,
+    //         required: true
+    //     },
+    //     status: {
+    //         type: String,
+    //         enum: ['Present', 'Absent', 'Late'],
+    //         required: true
+    //     }
+    // }],
+    // performanceMetrics: {
+    //     currentGrade: String,
+    //     remarks: String,
+    //     achievements: [String]
+    // }
 }, {
     timestamps: true // This will add createdAt and updatedAt fields automatically
 });

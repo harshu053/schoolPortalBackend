@@ -1,14 +1,11 @@
 import express from 'express';
-import { registerSchool, getSchoolDetails, updateSubscriptionStatus, loginSchool } from '../controllers/schoolController.js';
-import { protect, authorize } from '../middleware/auth.js';
+import { registerSchool, getSchoolDetails, updateSubscriptionStatus } from '../controllers/schoolController.js';
+import { protect, authorize } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// Public routes
-router.post('/register', registerSchool);
-router.post('/login', loginSchool);
+router.post('/register', registerSchool); 
 
-// Protected routes
 router.get('/:schoolId', protect, getSchoolDetails);
 router.patch('/:schoolId/subscription', protect, authorize('admin'), updateSubscriptionStatus);
 

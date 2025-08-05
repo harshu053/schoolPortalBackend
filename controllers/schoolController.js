@@ -9,7 +9,7 @@ import generateToken from "../utils/generateToken.js";
 
 const registerSchool = async (req, res) => {
   try {
-    console.log(req.body);
+   
     const {
       schoolName,
       diceCode,
@@ -30,6 +30,7 @@ const registerSchool = async (req, res) => {
         schoolEmail: principalEmail, // Mapping principal's email
         schoolPhone: principalPhone  // Mapping principal's phone
       },
+      password,
       features
     } = req.body;
     
@@ -39,12 +40,16 @@ const registerSchool = async (req, res) => {
     // Generate a unique school ID
     const schoolId = "SCH" + Date.now().toString().slice(-6);
 
-    // Generate a random password
-    const plainPassword = generatePassword();
-
-    // Hash the password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(plainPassword, salt);
+   
+    // Ensure password is properly handled
+    if (!password) {
+      throw new Error('Password is required');
+    }
+    
+    const passwordToHash = String(password).trim();
+   
+    
+    const hashedPassword = await bcrypt.hash(passwordToHash, 10); 
 
     // Create the new school
     const school = new School({
@@ -69,6 +74,8 @@ const registerSchool = async (req, res) => {
         schoolEmail: principalEmail,
         schoolPhone: principalPhone
       },
+      teachers:[],
+      students:[],
       status: "Active",
       password: hashedPassword,
       features: features || {
@@ -81,6 +88,8 @@ const registerSchool = async (req, res) => {
       }
     });
 
+   
+
     await school.save();
 
     res.status(201).json({
@@ -89,7 +98,7 @@ const registerSchool = async (req, res) => {
       data: {
         schoolId,
         schoolEmail,
-        initialPassword: plainPassword, // Send plain password only in registration response
+        initialPassword: passwordToHash,  // Send back the trimmed password
       },
     });
   } catch (error) {
@@ -101,61 +110,8 @@ const registerSchool = async (req, res) => {
     });
   }
 };
-
-// @desc    Login school admin
-// @route   POST /api/schools/login
-// @access  Public
-const loginSchool = async (req, res) => {
-  try{
-    const { schoolEmail, password } = req.body; 
-    
-    console.log("Login attempt with:", { schoolEmail, password });
-    
-    // Check if school exists with the email
-    const school = await School.findOne({ "contact.schoolEmail": schoolEmail });
-    console.log("School found:", school ? school.schoolName : "No school found");
-    if (!school) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid email or password",
-      });
-    }
-
-    
-    // Check if password matches
-    console.log("Comparing passwords...");
-    console.log("Stored hashed password:", school.password ? "exists" : "missing");
-    const isMatch = await bcrypt.compare(password, school.password); 
-    console.log("Password match:", isMatch ? "Yes" : "No");
-    if (!isMatch) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid email or password",
-      });
-    }
-
-    // Generate JWT token
-    const token = generateToken(school._id);
-
-    res.json({
-      success: true,
-      data: {
-        _id: school._id,
-        schoolId: school.schoolId,
-        schoolName: school.schoolName,
-        email: school.contact.schoolEmail,
-        token,
-      },
-    });
-  } catch (error) {
-    console.error("Login error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error during login",
-    });
-  }
-};
-
+ 
+ 
 // @desc    Get all schools
 // @route   GET /api/schools
 // @access  Private/Admin
@@ -323,8 +279,7 @@ const updateSubscriptionStatus = async (req, res) => {
 };
 
 export {
-  registerSchool,
-  loginSchool,
+  registerSchool, 
   getSchools,
   getSchool,
   updateSchool,

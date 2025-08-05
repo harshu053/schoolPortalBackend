@@ -1,7 +1,7 @@
 import express from 'express';
 import {
     getStudents,
-    getStudent,
+    getStudentById,
     createStudent,
     updateStudent,
     deleteStudent,
@@ -11,18 +11,18 @@ import {
 const router = express.Router();
 
 // Get all students and Create new student
-router.route('/')
-    .get(getStudents)
-    .post(createStudent);
+
+router.post('/addstudent',createStudent);  
+router.get('/allstudents/:schoolId', getStudentById); 
 
 // Get, update and delete student by ID
-router.route('/:id')
-    .get(getStudent)
-    .put(updateStudent)
-    .delete(deleteStudent);
+// router.route('/:id')
+//     .get(getStudent)
+//     .put(updateStudent)
+//     .delete(deleteStudent);
 
-// Get students by class and section
-router.route('/class/:class/section/:section')
-    .get(getStudentsByClass);
+// // Get students by class and section
+// router.route('/class/:class/section/:section')
+//     .get(getStudentsByClass);
 
 export default router;

@@ -1,20 +1,18 @@
 import mongoose from 'mongoose';
 
 const teacherSchema = new mongoose.Schema({
+    schoolId: {
+        type:  String, 
+        required: true
+    },
     employeeId: {
         type: String,
         required: true,
         unique: true
     },
     name: {
-        firstName: {
-            type: String,
-            required: true
-        },
-        lastName: {
-            type: String,
-            required: true
-        }
+       type: String,
+        required: true
     },
     dateOfBirth: {
         type: Date,
@@ -34,12 +32,7 @@ const teacherSchema = new mongoose.Schema({
         phone: {
             type: String,
             required: true
-        },
-        emergencyContact: {
-            name: String,
-            relation: String,
-            phone: String
-        },
+        }, 
         address: {
             street: String,
             city: String,
@@ -70,14 +63,6 @@ const teacherSchema = new mongoose.Schema({
             type: String,
             required: true
         },
-        department: {
-            type: String,
-            required: true
-        },
-        subjects: [{
-            type: String,
-            required: true
-        }]
     },
     classTeacherOf: {
         class: String,
@@ -99,36 +84,8 @@ const teacherSchema = new mongoose.Schema({
             }
         }]
     }],
-    attendance: [{
-        date: {
-            type: Date,
-            required: true
-        },
-        status: {
-            type: String,
-            enum: ['Present', 'Absent', 'Leave', 'Half-day'],
-            required: true
-        },
-        leaveReason: String
-    }],
-    documents: [{
-        type: {
-            type: String,
-            enum: ['Resume', 'Degree', 'Certificate', 'ID Proof', 'Other']
-        },
-        title: String,
-        url: String,
-        uploadDate: {
-            type: Date,
-            default: Date.now
-        }
-    }],
     salary: {
         basic: Number,
-        allowances: [{
-            type: String,
-            amount: Number
-        }],
         bankDetails: {
             accountNumber: String,
             bankName: String,
