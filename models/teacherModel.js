@@ -18,6 +18,10 @@ const teacherSchema = new mongoose.Schema({
         type: Date,
         required: true
     },
+    departemnt:{
+        type:  String,
+        required: true
+    },
     gender: {
         type: String,
         enum: ['Male', 'Female', 'Other'],

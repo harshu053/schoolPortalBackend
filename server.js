@@ -6,6 +6,7 @@ import studentRoutes from './routes/studentRoutes.js';
 import schoolRoutes from './routes/schools.js';
 import authRoutes from './routes/authRoutes.js';
 import teacherRoutes from './routes/teacherRoutes.js';
+import fileUploadRoutes from './routes/fileUploadRoutes.js';
 
 dotenv.config();
 
@@ -29,6 +30,7 @@ app.use('/api/students', studentRoutes);
 app.use('/api/schools',  schoolRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/teacher',teacherRoutes);  
+app.use('/api/files', fileUploadRoutes);
 
 const PORT = process.env.PORT || 5000;
 
